@@ -15,6 +15,7 @@ class GraphAnalyzer:
         root_address: str,
         risk_score: int,
         label: str,
+        entity_label: str = "user wallet",
         transactions: list[dict[str, Any]],
     ) -> dict[str, list[dict[str, Any]]]:
         nodes: dict[str, GraphNode] = {
@@ -22,6 +23,7 @@ class GraphAnalyzer:
                 id=root_address,
                 risk=label,
                 score=risk_score,
+                entity_label=entity_label,
             )
         }
         edges: list[GraphEdge] = []
