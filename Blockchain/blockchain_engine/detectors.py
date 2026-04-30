@@ -40,6 +40,31 @@ def detect_activity(transactions: list[NormalizedTransaction]) -> list[Detection
     return detections
 
 
+def label_transactions(transactions: list[NormalizedTransaction], address: str) -> None:
+    """
+    In-place labeling of transactions as: send, swap, buy, receive.
+    """
+    addr_lower = address.lower()
+    for tx in transactions:
+        # Default based on direction
+        if tx.from_address.lower() == addr_lower:
+            tx.tx_type = "send"
+        elif tx.to_address and tx.to_address.lower() == addr_lower:
+            tx.tx_type = "receive"
+
+        # Refine with method_id and known patterns
+        if tx.method_id in {"0x38ed1739", "0x7ff36ab5", "0x18cbafe5"}:
+            tx.tx_type = "swap"
+        elif tx.method_id == "0x095ea7b3":
+            tx.tx_type = "approval"
+        
+        # Heuristic for "buy" (e.g. receiving funds from a known exchange or payment gateway)
+        # This is simplified; in production, you'd check if the sender is a known exchange
+        if tx.tx_type == "receive" and tx.value > 10 and tx.asset in {"USDT", "USDC", "DAI"}:
+             # Placeholder: if it looks like a large stablecoin receipt, it might be a 'buy' from an off-ramp
+             pass
+
+
 def _detect_method(tx: NormalizedTransaction) -> list[Detection]:
     if not tx.method_id or tx.method_id not in DAPP_METHODS:
         return []

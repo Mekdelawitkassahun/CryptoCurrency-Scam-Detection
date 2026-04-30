@@ -16,6 +16,7 @@ class NormalizedTransaction:
     value: float
     asset: str
     direction: str
+    tx_type: str = "transfer"
     method_id: str | None = None
     token_contract: str | None = None
     token_symbol: str | None = None
@@ -71,6 +72,7 @@ class GraphNode:
     id: str
     risk: str
     score: int
+    entity_label: str = "user wallet"
 
 
 @dataclass(slots=True)

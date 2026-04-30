@@ -5,7 +5,8 @@ from concurrent.futures import ThreadPoolExecutor
 from blockchain_engine.alerts import AlertEngine
 from blockchain_engine.config import ScannerConfig
 from blockchain_engine.connectors import BitcoinConnector, EVMConnector
-from blockchain_engine.detectors import classify_entity, detect_activity
+from blockchain_engine.connectors.solana import SolanaConnector
+from blockchain_engine.detectors import classify_entity, detect_activity, label_transactions
 from blockchain_engine.explorer import ExplorerService
 from blockchain_engine.graph_analysis import GraphAnalyzer
 from blockchain_engine.indexer import SqliteIndexer
@@ -70,6 +71,88 @@ class BlockchainScanner:
                 request_timeout=self.config.request_timeout,
                 retry_config=retry_config,
             ),
+            "sepolia": EVMConnector(
+                chain="sepolia",
+                rpc_url=self.config.sepolia_rpc_url,
+                request_timeout=self.config.request_timeout,
+                max_rpc_scan_blocks=self.config.max_rpc_scan_blocks,
+                retry_config=retry_config,
+            ),
+            "optimism": EVMConnector(
+                chain="optimism",
+                rpc_url=self.config.optimism_rpc_url,
+                request_timeout=self.config.request_timeout,
+                max_rpc_scan_blocks=self.config.max_rpc_scan_blocks,
+                retry_config=retry_config,
+            ),
+            "avalanche": EVMConnector(
+                chain="avalanche",
+                rpc_url=self.config.avalanche_rpc_url,
+                request_timeout=self.config.request_timeout,
+                max_rpc_scan_blocks=self.config.max_rpc_scan_blocks,
+                retry_config=retry_config,
+            ),
+            "fantom": EVMConnector(
+                chain="fantom",
+                rpc_url=self.config.fantom_rpc_url,
+                request_timeout=self.config.request_timeout,
+                max_rpc_scan_blocks=self.config.max_rpc_scan_blocks,
+                retry_config=retry_config,
+            ),
+            "base": EVMConnector(
+                chain="base",
+                rpc_url=self.config.base_rpc_url,
+                request_timeout=self.config.request_timeout,
+                max_rpc_scan_blocks=self.config.max_rpc_scan_blocks,
+                retry_config=retry_config,
+            ),
+            "celo": EVMConnector(
+                chain="celo",
+                rpc_url=self.config.celo_rpc_url,
+                request_timeout=self.config.request_timeout,
+                max_rpc_scan_blocks=self.config.max_rpc_scan_blocks,
+                retry_config=retry_config,
+            ),
+            "gnosis": EVMConnector(
+                chain="gnosis",
+                rpc_url=self.config.gnosis_rpc_url,
+                request_timeout=self.config.request_timeout,
+                max_rpc_scan_blocks=self.config.max_rpc_scan_blocks,
+                retry_config=retry_config,
+            ),
+            "cronos": EVMConnector(
+                chain="cronos",
+                rpc_url=self.config.cronos_rpc_url,
+                request_timeout=self.config.request_timeout,
+                max_rpc_scan_blocks=self.config.max_rpc_scan_blocks,
+                retry_config=retry_config,
+            ),
+            "moonbeam": EVMConnector(
+                chain="moonbeam",
+                rpc_url=self.config.moonbeam_rpc_url,
+                request_timeout=self.config.request_timeout,
+                max_rpc_scan_blocks=self.config.max_rpc_scan_blocks,
+                retry_config=retry_config,
+            ),
+            "metis": EVMConnector(
+                chain="metis",
+                rpc_url=self.config.metis_rpc_url,
+                request_timeout=self.config.request_timeout,
+                max_rpc_scan_blocks=self.config.max_rpc_scan_blocks,
+                retry_config=retry_config,
+            ),
+            "kava": EVMConnector(
+                chain="kava",
+                rpc_url=self.config.kava_rpc_url,
+                request_timeout=self.config.request_timeout,
+                max_rpc_scan_blocks=self.config.max_rpc_scan_blocks,
+                retry_config=retry_config,
+            ),
+            "solana": SolanaConnector(
+                api_url=self.config.solana_api_url,
+                request_timeout=self.config.request_timeout,
+                retry_config=retry_config,
+            ),
         }
         self.indexer = SqliteIndexer(self.config.data_dir)
         self.risk_engine = RiskEngine(self.config.data_dir)
@@ -85,6 +168,10 @@ class BlockchainScanner:
     def scan_address(self, chain: str, address: str, limit: int = 50) -> RiskResult:
         connector = self.connectors[chain]
         transactions = connector.get_transactions(address=address, limit=limit)
+        
+        # Label transactions (send, swap, buy, receive)
+        label_transactions(transactions, address)
+        
         detections = detect_activity(transactions)
         
         # New entity labeling logic
@@ -202,6 +289,7 @@ class BlockchainScanner:
             root_address=address,
             risk_score=result.score,
             label=result.label,
+            entity_label=result.entity_label,
             transactions=transactions,
         )
 

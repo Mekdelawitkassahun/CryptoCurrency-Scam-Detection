@@ -31,6 +31,7 @@ class SqliteIndexer:
                     value REAL NOT NULL,
                     asset TEXT NOT NULL,
                     direction TEXT NOT NULL,
+                    tx_type TEXT NOT NULL DEFAULT 'transfer',
                     method_id TEXT,
                     token_contract TEXT,
                     token_symbol TEXT,
@@ -39,6 +40,13 @@ class SqliteIndexer:
                 )
                 """
             )
+            # Migration: add tx_type if missing
+            try:
+                connection.execute("ALTER TABLE normalized_transactions ADD COLUMN tx_type TEXT NOT NULL DEFAULT 'transfer'")
+            except sqlite3.OperationalError:
+                # Column already exists
+                pass
+            
             connection.execute(
                 """
                 CREATE INDEX IF NOT EXISTS idx_normalized_transactions_timestamp
@@ -69,11 +77,12 @@ class SqliteIndexer:
                     value,
                     asset,
                     direction,
+                    tx_type,
                     method_id,
                     token_contract,
                     token_symbol,
                     raw_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 [
                     (
@@ -86,6 +95,7 @@ class SqliteIndexer:
                         tx.value,
                         tx.asset,
                         tx.direction,
+                        tx.tx_type,
                         tx.method_id,
                         tx.token_contract,
                         tx.token_symbol,

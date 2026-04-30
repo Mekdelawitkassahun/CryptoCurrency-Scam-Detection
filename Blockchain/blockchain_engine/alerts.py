@@ -55,6 +55,17 @@ class AlertEngine:
                     {"clusters": clusters},
                 )
             )
+            # Add specific trigger for high-risk clusters
+            if any("rapid_funding" in c["type"] for c in clusters):
+                alerts.append(
+                    self._alert(
+                        "high_risk_cluster_interaction",
+                        "high",
+                        address,
+                        chain,
+                        {"reason": "Interaction with rapid funding cluster detected"},
+                    )
+                )
 
         if self._has_large_movement_after_inactivity(transactions):
             alerts.append(
